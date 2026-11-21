@@ -1,29 +1,33 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase/server";
+import { BRAND } from "@/lib/brand";
 import { naira } from "@/lib/study";
+import { RefCapture } from "@/components/RefCapture";
+import type { Plan } from "@/lib/types";
 
 export const revalidate = 300;
 
 export default async function Landing() {
   const sb = await supabaseServer();
   const [{ data: s }, { count }] = await Promise.all([
-    sb.from("settings").select("free_daily_limit,pro_price_ngn,pro_days").eq("id", 1).single(),
+    sb.from("settings").select("free_limit,free_window_hours,plans,locker_free_items").eq("id", 1).single(),
     sb.from("courses").select("id", { count: "exact", head: true }).eq("status", "approved"),
   ]);
-  const free = s?.free_daily_limit ?? 15, price = s?.pro_price_ngn ?? 1500, days = s?.pro_days ?? 30;
+  const free = s?.free_limit ?? 10, hours = s?.free_window_hours ?? 6, plans: Plan[] = s?.plans ?? [];
   return (
     <>
+      <RefCapture />
       <header className="top"><div className="wrap">
-        <Link href="/" className="brand"><span className="brand-mark">SC</span>Study Carrel</Link>
+        <Link href="/" className="brand"><span className="brand-mark">{BRAND.short}</span>{BRAND.name}</Link>
         <span style={{ flex: 1 }} />
         <Link href="/login" className="btn sm">Sign in</Link>
       </div></header>
       <main className="wrap">
         <section className="hero">
           <div>
-            <span className="chip acc">{count ? `${count} course material${count === 1 ? "" : "s"} on the shelf` : "Built for distance learners"}</span>
+            <span className="chip acc">{count ? `${count} course material${count === 1 ? "" : "s"} in the library` : "Free to start · built for distance learners"}</span>
             <h1 style={{ marginTop: 14 }}>Read your course material. Sit the exam before the exam.</h1>
-            <p className="lead">Study Carrel turns your course PDFs into a reading desk with a professor beside you, and CBT-style practice exams set from the material itself. Every answer is marked, explained, and linked back to the page.</p>
+            <p className="lead">{BRAND.name} turns your course PDFs into a reading desk with an AI professor beside you, and CBT-style practice exams set from the material itself. Every answer is marked, explained, and linked back to the page.</p>
             <div className="meta" style={{ gap: 10 }}>
               <Link href="/login" className="btn pri lg">Start studying free</Link>
               <a href="#how" className="btn lg ghost">How it works</a>
@@ -37,27 +41,38 @@ export default async function Landing() {
                 <div key={o} className="opt" aria-pressed={i === 0}><span className="k">{"ABCD"[i]}</span><span>{o}</span></div>
               ))}
             </div>
-            <div className="note ok">Correct. LCC classifies all knowledge; the others are subject headings, cataloguing rules and a format. <b>Page 12.</b></div>
+            <div className="note ok">Correct. LCC classifies all knowledge; the others are subject headings, cataloguing rules and a format. <b>Page 12.</b> +10 XP</div>
           </div>
         </section>
 
         <section id="how" className="feature-grid">
-          <div className="feature"><h3>A shared library</h3><p>Students add their course materials once and everyone studies from them. Each upload is checked before it goes live.</p></div>
-          <div className="feature"><h3>A professor on every page</h3><p>Ask about anything you are reading. Get plain explanations, the points examiners love, and quick quizzes on the page in front of you.</p></div>
-          <div className="feature"><h3>Practice exams from your material</h3><p>e-Exam (CBT) multiple choice and fill-in-the-gap, or theory (POP) questions marked out of 5. Timed, flagged, and graded on the NOUN scale.</p></div>
+          <div className="feature"><h3>An AI professor on every page</h3><p>Ask about anything you are reading. Plain explanations, the points examiners love, and quick quizzes on the page in front of you.</p></div>
+          <div className="feature"><h3>Practice exams from your material</h3><p>e-Exam (CBT) multiple choice and fill-in-the-gap, or theory (POP) questions marked out of 5. Timed, and graded on the NOUN scale.</p></div>
+          <div className="feature"><h3>Your school Locker</h3><p>Fees receipts, course forms, results, admission letter and ID card, sorted by year and semester. Snap a receipt and the AI files it for you.</p></div>
+          <div className="feature"><h3>Level up as you study</h3><p>Earn XP for every page and every mark. Keep your streak, climb from Fresher to Professor, and see where you rank in your school this week.</p></div>
+          <div className="feature"><h3>A library you share</h3><p>Add a course material once and your whole class studies from it. Send any course to your WhatsApp group with one tap.</p></div>
           <div className="feature"><h3>Know what to reread</h3><p>Scores by topic, the questions you keep missing, and an exam timetable with countdowns. Synced across your phone and laptop.</p></div>
         </section>
 
-        <section className="price" style={{ marginBottom: 48 }}>
-          <div className="panel"><span className="lbl">Free</span><h2 style={{ fontSize: 28 }}>{naira(0)}</h2>
-            <ul><li>Every course on the shelf</li><li>{free} professor and exam actions a day</li><li>Results, notes and timetable synced</li></ul>
-            <Link href="/login" className="btn">Create free account</Link></div>
-          <div className="panel" style={{ borderColor: "var(--accent)" }}><span className="lbl" style={{ color: "var(--accent)" }}>Pro pass</span><h2 style={{ fontSize: 28 }}>{naira(price)} <span className="hint" style={{ fontSize: 14 }}>for {days} days</span></h2>
-            <ul><li>Unlimited professor and exams</li><li>Study guides for whole units</li><li>Pay with card, bank transfer or USSD</li></ul>
-            <Link href="/login?next=/upgrade" className="btn pri">Get Pro</Link></div>
+        <section style={{ marginBottom: 48 }}>
+          <div className="section-t" style={{ marginTop: 0 }}><h2>Free to use. Passes when exams are close.</h2></div>
+          <div className="price">
+            <div className="panel"><span className="lbl">Free</span><h2 style={{ fontSize: 28 }}>{naira(0)}</h2>
+              <ul><li>Every course in the library</li><li>{free} AI actions, refilled every {hours} hours</li><li>Locker for {s?.locker_free_items ?? 30} documents</li><li>Levels, streaks and ranks</li></ul>
+              <Link href="/login" className="btn">Create free account</Link></div>
+            {plans.map((p, i) => (
+              <div key={p.id} className="panel" style={i === 1 ? { borderColor: "var(--accent)" } : undefined}>
+                <span className="lbl" style={i === 1 ? { color: "var(--accent)" } : undefined}>{p.label}{i === 1 ? " · most popular" : ""}</span>
+                <h2 style={{ fontSize: 28 }}>{naira(p.price_ngn)} <span className="hint" style={{ fontSize: 14 }}>/ {p.days} days</span></h2>
+                <ul><li>Unlimited AI professor and exams</li><li>Unlimited Locker and AI receipt filing</li><li>Card, bank transfer or USSD</li></ul>
+                <Link href={`/login?next=/upgrade`} className={`btn ${i === 1 ? "pri" : ""}`}>Get {p.label.toLowerCase()}</Link>
+              </div>
+            ))}
+          </div>
+          <p className="hint" style={{ marginTop: 12 }}>Passes are one-off payments and never renew automatically. Invite classmates to earn free Pro days.</p>
         </section>
       </main>
-      <footer className="site"><div className="wrap">Study Carrel · Built for students preparing for their exams. Questions are generated by AI from uploaded course materials; always confirm with your official course guide.</div></footer>
+      <footer className="site"><div className="wrap">{BRAND.name} · Built for students preparing for their exams. Questions are generated by AI from uploaded course materials; always confirm with your official course guide.</div></footer>
     </>
   );
 }

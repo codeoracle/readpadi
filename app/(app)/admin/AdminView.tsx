@@ -142,20 +142,40 @@ function Users({ meId }: { meId: string }) {
 
 function SettingsForm({ s }: { s: any }) {
   const toast = useToast(); const router = useRouter();
-  const [f, setF] = useState({ free_daily_limit: s.free_daily_limit, pro_price_ngn: s.pro_price_ngn, pro_days: s.pro_days, admin_emails: (s.admin_emails || []).join(", ") });
+  const [f, setF] = useState({ free_limit: s.free_limit, free_window_hours: s.free_window_hours, locker_free_items: s.locker_free_items, referral_every: s.referral_every, referral_days: s.referral_days, admin_emails: (s.admin_emails || []).join(", ") });
+  const [plans, setPlans] = useState<{ id: string; label: string; days: number; price_ngn: number }[]>(s.plans || []);
+  const setPlan = (i: number, k: string, v: string) => setPlans(plans.map((p, j) => (j === i ? { ...p, [k]: k === "label" || k === "id" ? v : +v } : p)));
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    const { error } = await supabaseBrowser().from("settings").update({ free_daily_limit: +f.free_daily_limit, pro_price_ngn: +f.pro_price_ngn, pro_days: +f.pro_days, admin_emails: f.admin_emails.split(",").map((x: string) => x.trim().toLowerCase()).filter(Boolean), updated_at: new Date().toISOString() }).eq("id", 1);
+    const { error } = await supabaseBrowser().from("settings").update({
+      free_limit: +f.free_limit, free_window_hours: +f.free_window_hours, locker_free_items: +f.locker_free_items,
+      referral_every: +f.referral_every, referral_days: +f.referral_days, plans: plans.filter((p) => p.id && p.days > 0 && p.price_ngn >= 100),
+      admin_emails: f.admin_emails.split(",").map((x: string) => x.trim().toLowerCase()).filter(Boolean), updated_at: new Date().toISOString(),
+    }).eq("id", 1);
     if (error) toast(error.message); else { toast("Settings saved"); router.refresh(); }
   }
+  const num = (k: keyof typeof f, label: string, min = 0, max = 10000) => (
+    <div className="field"><label className="lbl" htmlFor={k}>{label}</label><input id={k} type="number" min={min} max={max} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></div>
+  );
   return (
-    <form className="panel form" onSubmit={save} style={{ maxWidth: 560 }}>
-      <div className="row2">
-        <div className="field"><label className="lbl" htmlFor="sLimit">Free AI actions per day</label><input id="sLimit" type="number" min={0} max={500} value={f.free_daily_limit} onChange={(e) => setF({ ...f, free_daily_limit: e.target.value })} /></div>
-        <div className="field"><label className="lbl" htmlFor="sDays">Pro pass length (days)</label><input id="sDays" type="number" min={1} max={366} value={f.pro_days} onChange={(e) => setF({ ...f, pro_days: e.target.value })} /></div>
-      </div>
-      <div className="field"><label className="lbl" htmlFor="sPrice">Pro price (₦)</label><input id="sPrice" type="number" min={100} step={50} value={f.pro_price_ngn} onChange={(e) => setF({ ...f, pro_price_ngn: e.target.value })} /></div>
-      <div className="field"><label className="lbl" htmlFor="sAdmins">Auto-admin emails</label><input id="sAdmins" value={f.admin_emails} onChange={(e) => setF({ ...f, admin_emails: e.target.value })} /><span className="hint">People who sign up with these emails become admins. Use the Students tab to change existing accounts.</span></div>
+    <form className="panel form" onSubmit={save} style={{ maxWidth: 640 }}>
+      <div className="lbl">Free plan</div>
+      <div className="row2">{num("free_limit", "Free AI actions per window", 0, 500)}{num("free_window_hours", "Window length (hours)", 1, 48)}</div>
+      <span className="hint">Example: 10 actions every 6 hours. The window starts at a student's first action and refills when it ends.</span>
+      {num("locker_free_items", "Free Locker documents", 0, 1000)}
+      <div className="lbl" style={{ marginTop: 8 }}>Passes (₦)</div>
+      {plans.map((p, i) => (
+        <div key={i} className="row2" style={{ gridTemplateColumns: "1.4fr .7fr .9fr auto" }}>
+          <input className="input" aria-label="Label" value={p.label} onChange={(e) => setPlan(i, "label", e.target.value)} />
+          <input className="input" aria-label="Days" type="number" min={1} value={p.days} onChange={(e) => setPlan(i, "days", e.target.value)} />
+          <input className="input" aria-label="Price" type="number" min={100} step={50} value={p.price_ngn} onChange={(e) => setPlan(i, "price_ngn", e.target.value)} />
+          <button type="button" className="btn sm ghost danger" onClick={() => setPlans(plans.filter((_, j) => j !== i))}>Remove</button>
+        </div>
+      ))}
+      <div><button type="button" className="btn sm" onClick={() => setPlans([...plans, { id: "plan" + (plans.length + 1), label: "New pass", days: 14, price_ngn: 800 }])}>Add a pass</button></div>
+      <div className="lbl" style={{ marginTop: 8 }}>Referrals</div>
+      <div className="row2">{num("referral_every", "Reward every N sign-ups", 1, 100)}{num("referral_days", "Free days per reward", 0, 60)}</div>
+      <div className="field"><label className="lbl" htmlFor="sAdmins">Auto-admin emails</label><input id="sAdmins" value={f.admin_emails} onChange={(e) => setF({ ...f, admin_emails: e.target.value })} /><span className="hint">People who sign up with these emails become admins.</span></div>
       <div className="meta" style={{ justifyContent: "flex-end" }}><button className="btn pri">Save settings</button></div>
     </form>
   );

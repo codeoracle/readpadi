@@ -1,6 +1,8 @@
-# Study Carrel
+# Akada AI
 
-Read course materials with an AI professor, sit CBT-style practice exams set from the material, and track grades by topic.
+Your AI study partner. Read course materials with an AI professor, sit CBT-style practice exams set from the material, keep every school document in a private Locker, and level up as you study.
+
+The product name lives in `lib/brand.ts`.
 
 **Stack:** Next.js 15 (App Router, TypeScript) · Supabase (Auth, Postgres, Storage) · Netlify (hosting + Edge Function for AI) · Claude API · Paystack.
 
@@ -15,7 +17,12 @@ Read course materials with an AI professor, sit CBT-style practice exams set fro
 | Personal data (results, notes, progress, exam dates) | `attempts`, `notes`, `progress`, `exams`, all owner-only via RLS |
 | AI calls with daily limits | `netlify/edge-functions/ai.ts` → `consume_ai_credit()` → Claude API (streamed) |
 | Pro pass payments | `app/api/paystack/*` → `grant_pro()` (idempotent per reference) |
-| Admin (review uploads, roles, limits, price) | `app/(app)/admin` |
+| Admin (review uploads, roles, limits, passes, referrals) | `app/(app)/admin` |
+| Free AI limit (N actions per rolling window) | `consume_ai_credit()`, `ai_quota` table, Admin → Settings |
+| Passes (Week / Month / Semester) | `settings.plans`, `app/api/paystack/init` |
+| Levels, streaks, weekly ranks | `study_log` (XP written only by DB triggers), `my_level()`, `leaderboard()`, `app/(app)/ranks` |
+| Share links + referrals | `app/c/[id]` (public preview with WhatsApp card), `claim_referral()` |
+| Locker (documents by session/semester, AI receipt reading) | `locker_items` + private `locker` bucket, `app/(app)/locker` |
 
 The full schema, policies and functions are in `supabase/migrations/`.
 
@@ -25,7 +32,7 @@ The full schema, policies and functions are in `supabase/migrations/`.
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | no | already set |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | no | publishable key, already set |
-| `NEXT_PUBLIC_SITE_URL` | no | `https://study-carrel.netlify.app`, already set (change when you add a custom domain) |
+| `NEXT_PUBLIC_SITE_URL` | no | `https://akada-ai.netlify.app`, already set (change when you add a custom domain) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | Supabase → Project Settings → API keys → `service_role` / secret key |
 | `ANTHROPIC_API_KEY` | **yes** | console.anthropic.com |
 | `PAYSTACK_SECRET_KEY` | **yes** | Paystack → Settings → API Keys (use `sk_test_…` first, then `sk_live_…`) |
@@ -33,10 +40,10 @@ The full schema, policies and functions are in `supabase/migrations/`.
 
 ## One-time dashboard setup
 
-1. **Supabase → Authentication → URL Configuration:** Site URL `https://study-carrel.netlify.app`; add redirect URL `https://study-carrel.netlify.app/auth/callback` (and `http://localhost:3000/auth/callback` for local dev).
+1. **Supabase → Authentication → URL Configuration:** Site URL `https://akada-ai.netlify.app`; add redirect URL `https://akada-ai.netlify.app/auth/callback` (and `http://localhost:3000/auth/callback` for local dev).
 2. **Supabase → Authentication → Sign In / Providers → Google:** paste a Google OAuth client ID and secret (Google Cloud Console → APIs & Services → Credentials → OAuth client, type Web; authorised redirect URI is the callback URL Supabase shows you).
 3. **Supabase → Authentication → Emails → SMTP:** the built-in mailer only sends a few emails per hour. Before rollout, connect a real SMTP provider (Resend, Brevo, Zoho, etc.).
-4. **Paystack → Settings → API Keys & Webhooks:** webhook URL `https://study-carrel.netlify.app/api/paystack/webhook`.
+4. **Paystack → Settings → API Keys & Webhooks:** webhook URL `https://akada-ai.netlify.app/api/paystack/webhook`.
 5. Sign up with `yunusmustapha2@gmail.com`; that account becomes admin automatically.
 
 ## Local development
@@ -50,5 +57,5 @@ npx netlify-cli dev          # runs Next.js and the /api/ai edge function togeth
 
 ## Costs to watch
 - Every professor answer, exam batch (≤10 questions), study guide or marking pass is one AI action and one Claude API call.
-- Free users are capped daily (Admin → Settings). Pro, moderators and admins are uncapped.
+- Free users get N AI actions per rolling window (default 10 every 6 hours, Admin → Settings). Pass holders, moderators and admins are uncapped.
 - Supabase free tier: 500 MB database, 1 GB file storage, 50k monthly active users. Course PDFs are the main storage cost; upgrade Supabase when storage nears 1 GB.

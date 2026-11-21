@@ -31,7 +31,10 @@ export default async (req: Request) => {
   });
   if (!credit.ok) return json({ message: "Could not check your AI allowance. Try again." }, 503);
   const c = await credit.json();
-  if (!c.allowed) return json({ error: "limit", message: `You have used all ${c.limit ?? ""} free AI actions for today. Upgrade to Pro for unlimited use, or come back tomorrow.` }, 402);
+  if (!c.allowed) {
+    const at = c.resets_at ? new Date(c.resets_at).toLocaleTimeString("en-NG", { hour: "numeric", minute: "2-digit", timeZone: "Africa/Lagos" }) : "";
+    return json({ error: "limit", resets_at: c.resets_at, message: `You have used your ${c.limit ?? ""} free AI actions. They refill${at ? " at " + at : " soon"}, or get a pass for unlimited use.` }, 402);
+  }
 
   const payload: any = {
     model: env("CLAUDE_MODEL") || "claude-sonnet-5-5",

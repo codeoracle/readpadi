@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import LevelCard from "@/components/LevelCard";
 import { daysTo, fmtDate, fmtExam, grade, gradeTone, levelLabel, splitCode } from "@/lib/study";
 import type { ClassStat, Course, Exam, Profile, Progress } from "@/lib/types";
 
@@ -52,6 +53,7 @@ export default function LibraryView({ courses, myPending, exams, progress, attem
         <Link href="/upload" className="btn pri">Add course material</Link>
       </div>
 
+      <LevelCard />
       {!p?.school && (
         <div className="panel" style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <div style={{ minWidth: 0 }}><b>Add your school and level</b><div className="hint">The professor tailors explanations to your programme, and the library shows your school first.</div></div>

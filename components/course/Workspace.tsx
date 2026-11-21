@@ -10,6 +10,7 @@ import Reader from "./Reader";
 import NotesTab from "./NotesTab";
 import TestTab from "./TestTab";
 import ResultsTab from "./ResultsTab";
+import ShareCourse from "@/components/ShareCourse";
 
 export type Tab = "read" | "notes" | "test" | "results";
 export interface Ctx {
@@ -38,6 +39,7 @@ export default function Workspace(props: { course: Course; profile: Profile | nu
           <div className="meta" style={{ marginBottom: 6 }}><Link href="/library" className="link">← Library</Link>{course.status !== "approved" && <span className="chip warn">{course.status === "pending" ? "awaiting review · only you and moderators can see this" : "not approved"}</span>}</div>
           <h1 style={{ fontSize: "clamp(22px,4vw,30px)" }}><span className="mono" style={{ color: "var(--accent)" }}>{course.code}</span> {course.title}</h1>
         </div>
+        {course.status === "approved" && <ShareCourse courseId={course.id} code={course.code} title={course.title} refCode={profile?.referral_code} />}
       </div>
       <ExamStrip course={course} exam={exam} setExam={setExam} />
       <div className="tabs" role="tablist">

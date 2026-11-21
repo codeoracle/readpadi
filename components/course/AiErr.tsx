@@ -8,7 +8,7 @@ export default function AiErr({ e }: { e: unknown }) {
   return (
     <div className="note err">
       {aiMessage(e)}
-      {err.code === "limit" && <> <Link className="link" href="/upgrade">Get Pro</Link></>}
+      {err.code === "limit" && <> <Link className="link" href="/upgrade">Get a pass</Link></>}
       {err.code === "auth" && <> <Link className="link" href="/login">Sign in</Link></>}
     </div>
   );

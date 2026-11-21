@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/supabase/server";
 import AppNav from "@/components/AppNav";
 import { ToastProvider } from "@/components/Toast";
+import { RefClaim } from "@/components/RefCapture";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { sb, user } = await requireUser();
@@ -14,6 +15,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const initials = label.includes("@") ? label[0].toUpperCase() : label.split(/\s+/).map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
   return (
     <ToastProvider>
+      <RefClaim />
       <AppNav initials={initials} staff={staff} pendingCount={pending} />
       <main className="wrap">{children}</main>
     </ToastProvider>
