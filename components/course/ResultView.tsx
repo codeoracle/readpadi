@@ -3,6 +3,7 @@ import { useState } from "react";
 import { fmtDate, grade, md, topicRows, verdict } from "@/lib/study";
 import type { Attempt, MarkedItem } from "@/lib/types";
 import type { Ctx } from "./Workspace";
+import CreateChallenge from "@/components/CreateChallenge";
 
 export default function ResultView({ ctx, a, onRetake, onNew }: { ctx: Ctx; a: Attempt; onRetake: (a: Attempt) => void; onNew: () => void }) {
   const [onlyWrong, setOnlyWrong] = useState(false);
@@ -21,6 +22,7 @@ export default function ResultView({ ctx, a, onRetake, onNew }: { ctx: Ctx; a: A
         </div>
       </div>
       {a.ai_note && <div className="note" style={{ marginBottom: 14 }}>{a.ai_note}</div>}
+      <div style={{ marginBottom: 16 }}><CreateChallenge attempt={a} courseId={ctx.course.id} courseCode={ctx.course.code} refCode={ctx.profile?.referral_code} /></div>
       <div className="panel"><div className="lbl">Score by topic</div>
         <div className="topics">{tps.map((t) => (
           <div key={t.k} className={`topic ${t.pct < 50 ? "weak" : ""}`}>
