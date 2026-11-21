@@ -1,0 +1,8 @@
+node_modules/
+.next/
+.netlify/
+.env*
+!.env.example
+public/pdf.worker.min.mjs
+*.tsbuildinfo
+next-env.d.ts
