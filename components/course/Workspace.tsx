@@ -11,8 +11,9 @@ import NotesTab from "./NotesTab";
 import TestTab from "./TestTab";
 import ResultsTab from "./ResultsTab";
 import ShareCourse from "@/components/ShareCourse";
+import QuizBoard from "@/components/QuizBoard";
 
-export type Tab = "read" | "notes" | "test" | "results";
+export type Tab = "read" | "notes" | "test" | "quizzes" | "results";
 export interface Ctx {
   course: Course; profile: Profile | null; exam: Exam | null;
   page: number; setPage: (n: number) => void; goPage: (n: number) => void;
@@ -43,9 +44,9 @@ export default function Workspace(props: { course: Course; profile: Profile | nu
       </div>
       <ExamStrip course={course} exam={exam} setExam={setExam} />
       <div className="tabs" role="tablist">
-        {(["read", "notes", "test", "results"] as Tab[]).map((t) => (
+        {(["read", "notes", "test", "quizzes", "results"] as Tab[]).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); if (t !== "test") setViewAttempt(null); }}>
-            {{ read: "Read", notes: "Notes", test: "Test", results: "Results" }[t]}
+            {{ read: "Read", notes: "Notes", test: "Test", quizzes: "Class quizzes", results: "Results" }[t]}
             {t === "notes" && notes.length > 0 && <> <span className="chip">{notes.length}</span></>}
           </button>
         ))}
@@ -53,6 +54,12 @@ export default function Workspace(props: { course: Course; profile: Profile | nu
       {tab === "read" && <Reader ctx={ctx} initialSeen={props.initialProgress?.seen || ""} />}
       {tab === "notes" && <NotesTab ctx={ctx} />}
       {tab === "test" && <TestTab ctx={ctx} viewAttempt={viewAttempt} clearView={() => setViewAttempt(null)} />}
+      {tab === "quizzes" && (
+        <>
+          <div className="meta" style={{ justifyContent: "space-between", marginBottom: 12 }}><span className="hint">Quizzes students set for {course.code}. Playing them costs no AI actions.</span><Link className="btn sm pri" href={`/quizzes/new?course=${course.id}`}>Create a quiz for {course.code}</Link></div>
+          <QuizBoard courseId={course.id} emptyText={<>No quizzes for {course.code} yet. <Link className="link" href={`/quizzes/new?course=${course.id}`}>Write one</Link>, or sit a practice test and turn it into a challenge.</>} />
+        </>
+      )}
       {tab === "results" && <ResultsTab ctx={ctx} onView={(a) => { setViewAttempt(a); setTab("test"); }} />}
     </>
   );

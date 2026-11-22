@@ -7,7 +7,7 @@ import { grade, gradeTone, normAns } from "@/lib/study";
 import SharePanel from "@/components/SharePanel";
 
 type BoardRow = { name: string; score: number; total: number; secs: number; is_me: boolean };
-export type QuizInfo = { code: string; title: string; n: number; time_limit_secs: number; expired: boolean; creator: string; is_creator: boolean; course: { id: string; code: string; title: string } | null; takers: number; board: BoardRow[]; mine: { score: number | null; total: number | null; secs: number | null; submitted: boolean } | null };
+export type QuizInfo = { code: string; title: string; description?: string; n: number; time_limit_secs: number; expired: boolean; creator: string; is_creator: boolean; course: { id: string; code: string; title: string } | null; takers: number; board: BoardRow[]; mine: { score: number | null; total: number | null; secs: number | null; submitted: boolean } | null };
 type Q = { n: number; type: "mcq" | "fib"; q: string; options: string[]; topic: string; page: number | null };
 type Review = { n: number; answer: number | string; accept: string[]; explanation: string; given: number | string | null };
 type Result = { score: number; total: number; secs: number; rank: number; questions: Q[]; review: Review[] };
@@ -131,6 +131,7 @@ export default function QuizPlay({ info: initial, signedIn }: { info: QuizInfo; 
         <span className="chip acc">{info.course ? info.course.code : "Class quiz"}</span>
         <h1 style={{ fontSize: "clamp(26px,5vw,38px)", fontWeight: 800, letterSpacing: "-.02em", marginTop: 10 }}>{info.creator} challenged you</h1>
         <p className="muted" style={{ margin: "6px 0 0", fontFamily: "var(--f-read)", fontSize: 17 }}>{info.title}{info.course ? ` · ${info.course.title}` : ""}</p>
+        {info.description && <p style={{ margin: "8px 0 0", fontFamily: "var(--f-read)" }}>{info.description}</p>}
       </div>
       <div className="stats" style={{ marginBottom: 0 }}>
         <div className="stat"><span className="lbl">Questions</span><b>{info.n}</b></div>
