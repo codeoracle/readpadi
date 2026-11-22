@@ -4,7 +4,9 @@ import { paystack } from "@/lib/paystack";
 
 export async function POST(req: Request) {
   const { sb, user } = await requireUser();
-  if (!user?.email) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Sign in first" }, { status: 401 });
+  // Paystack requires an email. Phone-only accounts get a stable placeholder address on our domain.
+  const payEmail = user.email || `${(user.phone || user.id).replace(/\D/g, "") || user.id.slice(0, 12)}@pay.readpadi.xyz`;
   const body = await req.json().catch(() => ({}));
   const { data: s } = await sb.from("settings").select("plans").eq("id", 1).single();
   const plan = ((s?.plans ?? []) as { id: string; days: number; price_ngn: number }[]).find((p) => p.id === body.plan);
@@ -17,7 +19,7 @@ export async function POST(req: Request) {
     const data = await paystack("/transaction/initialize", {
       method: "POST",
       body: JSON.stringify({
-        email: user.email, amount, currency: "NGN", reference,
+        email: payEmail, amount, currency: "NGN", reference,
         callback_url: `${origin}/upgrade?ref=${reference}`,
         metadata: { user_id: user.id, plan: plan.id, days: plan.days },
         channels: ["card", "bank", "ussd", "bank_transfer"],

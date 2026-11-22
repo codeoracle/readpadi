@@ -1,33 +1,78 @@
 "use client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
+/** Accepts 0803…, 803…, 234803… or +234803… and returns E.164 (+234…). Other countries: type the full +code number. */
+function toE164(raw: string) {
+  const d = raw.replace(/[^\d+]/g, "");
+  if (d.startsWith("+")) return d;
+  if (d.startsWith("234")) return "+" + d;
+  if (d.startsWith("0")) return "+234" + d.slice(1);
+  if (/^[789]\d{9}$/.test(d)) return "+234" + d;
+  return "+" + d;
+}
+
 export default function LoginForm({ next }: { next: string }) {
+  const router = useRouter();
+  const [mode, setMode] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [phone, setPhone] = useState(""); const [code, setCode] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "verifying" | "error">("idle");
   const [msg, setMsg] = useState("");
   const redirect = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+  const fail = (m: string) => { setState("error"); setMsg(m); };
 
   async function google() {
     const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirect() } });
-    if (error) { setState("error"); setMsg(error.message.includes("not enabled") ? "Google sign-in is not switched on yet. Use your email instead." : error.message); }
+    if (error) fail(error.message.includes("not enabled") ? "Google sign-in is not switched on yet. Use your email or phone instead." : error.message);
   }
   async function magic(e: React.FormEvent) {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email)) { setState("error"); setMsg("Enter a valid email address."); return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) return fail("Enter a valid email address.");
     setState("sending");
     const { error } = await supabaseBrowser().auth.signInWithOtp({ email: email.trim(), options: { emailRedirectTo: redirect() } });
-    if (error) { setState("error"); setMsg(error.status === 429 ? "Too many requests. Wait a minute, then try again." : error.message); }
+    if (error) fail(error.status === 429 ? "Too many requests. Wait a minute, then try again." : error.message);
     else setState("sent");
   }
+  async function sendSms(e?: React.FormEvent) {
+    e?.preventDefault();
+    const p = toE164(phone);
+    if (!/^\+\d{10,15}$/.test(p)) return fail("Enter a valid phone number, e.g. 0803 123 4567.");
+    setState("sending");
+    const { error } = await supabaseBrowser().auth.signInWithOtp({ phone: p });
+    if (error) fail(error.status === 429 ? "Too many requests. Wait a minute, then try again." : /provider|not enabled|unsupported/i.test(error.message) ? "Phone sign-in is not available right now. Use Google or email." : error.message);
+    else { setState("sent"); setCode(""); }
+  }
+  async function verify(e: React.FormEvent) {
+    e.preventDefault();
+    if (!/^\d{4,8}$/.test(code.trim())) return fail("Enter the code from the SMS.");
+    setState("verifying");
+    const { error } = await supabaseBrowser().auth.verifyOtp({ phone: toE164(phone), token: code.trim(), type: "sms" });
+    if (error) { setState("sent"); setMsg(/expired|invalid/i.test(error.message) ? "That code is wrong or has expired. Check it, or send a new one." : error.message); return; }
+    router.replace(next.startsWith("/") ? next : "/library"); router.refresh();
+  }
 
-  if (state === "sent") return (
-    <div className="panel form">
-      <b>Check your email</b>
-      <p className="muted" style={{ margin: 0 }}>We sent a sign-in link to <b>{email}</b>. Open it on this device. It can take a minute, and may land in spam or promotions.</p>
-      <button className="link" style={{ justifySelf: "start" }} onClick={() => setState("idle")}>Use a different email</button>
-    </div>
-  );
+  if (state === "sent" || state === "verifying") {
+    if (mode === "email") return (
+      <div className="panel form">
+        <b>Check your email</b>
+        <p className="muted" style={{ margin: 0 }}>We sent a sign-in link to <b>{email}</b>. Open it on this device. It can take a minute, and may land in spam or promotions.</p>
+        <button className="link" style={{ justifySelf: "start" }} onClick={() => setState("idle")}>Use a different email</button>
+      </div>
+    );
+    return (
+      <form className="panel form" onSubmit={verify}>
+        <b>Enter the code</b>
+        <p className="muted" style={{ margin: 0 }}>We texted a code to <b>{toE164(phone)}</b>. It can take up to a minute.</p>
+        <div className="field"><label className="lbl" htmlFor="otp">Code</label><input id="otp" inputMode="numeric" autoComplete="one-time-code" maxLength={8} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} placeholder="123456" style={{ fontFamily: "var(--f-mono)", fontSize: 20, letterSpacing: ".2em" }} autoFocus /></div>
+        {msg && <div className="note err">{msg}</div>}
+        <button className="btn pri lg" disabled={state === "verifying"}>{state === "verifying" ? <><span className="spin" /> Checking…</> : "Sign in"}</button>
+        <div className="meta"><button type="button" className="link" onClick={() => sendSms()}>Send a new code</button><button type="button" className="link" onClick={() => { setState("idle"); setMsg(""); }}>Change number</button></div>
+      </form>
+    );
+  }
+
   return (
     <div className="panel form">
       <button className="btn lg" onClick={google} type="button">
@@ -35,11 +80,23 @@ export default function LoginForm({ next }: { next: string }) {
         Continue with Google
       </button>
       <div className="hint" style={{ textAlign: "center" }}>or</div>
-      <form onSubmit={magic} className="form">
-        <div className="field"><label className="lbl" htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
-        {state === "error" && <div className="note err">{msg}</div>}
-        <button className="btn pri lg" disabled={state === "sending"}>{state === "sending" ? <><span className="spin" /> Sending…</> : "Email me a sign-in link"}</button>
-      </form>
+      <div className="seg" style={{ justifyContent: "center" }}>
+        <button type="button" aria-pressed={mode === "email"} onClick={() => { setMode("email"); setState("idle"); setMsg(""); }}>Email</button>
+        <button type="button" aria-pressed={mode === "phone"} onClick={() => { setMode("phone"); setState("idle"); setMsg(""); }}>Phone number</button>
+      </div>
+      {mode === "email" ? (
+        <form onSubmit={magic} className="form">
+          <div className="field"><label className="lbl" htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
+          {state === "error" && <div className="note err">{msg}</div>}
+          <button className="btn pri lg" disabled={state === "sending"}>{state === "sending" ? <><span className="spin" /> Sending…</> : "Email me a sign-in link"}</button>
+        </form>
+      ) : (
+        <form onSubmit={sendSms} className="form">
+          <div className="field"><label className="lbl" htmlFor="phone">Phone number</label><input id="phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0803 123 4567" /><span className="hint">Nigerian numbers work as written. For other countries, start with + and the country code.</span></div>
+          {state === "error" && <div className="note err">{msg}</div>}
+          <button className="btn pri lg" disabled={state === "sending"}>{state === "sending" ? <><span className="spin" /> Sending…</> : "Text me a code"}</button>
+        </form>
+      )}
       <p className="hint" style={{ margin: 0 }}>By continuing you agree to use course materials for personal study only.</p>
     </div>
   );

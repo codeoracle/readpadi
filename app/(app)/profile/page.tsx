@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   return (
     <>
       <div className="page-head"><div><h1>My profile</h1><p>Your details tune the professor and the library. Only you and the site moderators can see them.</p></div></div>
-      <ProfileForm profile={p} email={user!.email || ""} schools={[...new Set((schools ?? []).map((s: { school: string }) => s.school).filter(Boolean))]} />
+      <ProfileForm profile={p} email={user!.email || user!.phone || ""} schools={[...new Set((schools ?? []).map((s: { school: string }) => s.school).filter(Boolean))]} />
     </>
   );
 }
