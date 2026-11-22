@@ -32,7 +32,7 @@ The full schema, policies and functions are in `supabase/migrations/`.
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | no | already set |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | no | publishable key, already set |
-| `NEXT_PUBLIC_SITE_URL` | no | `https://readpadi.netlify.app`, already set (change when you add a custom domain) |
+| `NEXT_PUBLIC_SITE_URL` | no | `https://readpadi.xyz`, already set (change when you add a custom domain) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | Supabase → Project Settings → API keys → `service_role` / secret key |
 | `ANTHROPIC_API_KEY` | **yes** | console.anthropic.com |
 | `PAYSTACK_SECRET_KEY` | **yes** | Paystack → Settings → API Keys (use `sk_test_…` first, then `sk_live_…`) |
@@ -40,10 +40,12 @@ The full schema, policies and functions are in `supabase/migrations/`.
 
 ## One-time dashboard setup
 
-1. **Supabase → Authentication → URL Configuration:** Site URL `https://readpadi.netlify.app`; add redirect URL `https://readpadi.netlify.app/auth/callback` (and `http://localhost:3000/auth/callback` for local dev).
+0. **Netlify → Domain management → Add a domain:** `readpadi.xyz` (and `www.readpadi.xyz`). Point the registrar's nameservers to Netlify DNS, or add the A/CNAME records Netlify shows. HTTPS is issued automatically.
+
+1. **Supabase → Authentication → URL Configuration:** Site URL `https://readpadi.xyz`; add redirect URL `https://readpadi.xyz/auth/callback` (and `http://localhost:3000/auth/callback` for local dev).
 2. **Supabase → Authentication → Sign In / Providers → Google:** paste a Google OAuth client ID and secret (Google Cloud Console → APIs & Services → Credentials → OAuth client, type Web; authorised redirect URI is the callback URL Supabase shows you).
 3. **Supabase → Authentication → Emails → SMTP:** the built-in mailer only sends a few emails per hour. Before rollout, connect a real SMTP provider (Resend, Brevo, Zoho, etc.).
-4. **Paystack → Settings → API Keys & Webhooks:** webhook URL `https://readpadi.netlify.app/api/paystack/webhook`.
+4. **Paystack → Settings → API Keys & Webhooks:** webhook URL `https://readpadi.xyz/api/paystack/webhook`.
 5. Sign up with `yunusmustapha2@gmail.com`; that account becomes admin automatically.
 
 ## Local development
