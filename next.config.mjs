@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // We don't use next/image optimisation; keep the server function small for Netlify.
+  images: { unoptimized: true },
+  outputFileTracingExcludes: {
+    "*": ["node_modules/@img/**", "node_modules/sharp/**", "node_modules/pdfjs-dist/**", "node_modules/typescript/**", "node_modules/@netlify/plugin-nextjs/**"],
+  },
   async headers() {
     return [{
       source: "/(.*)",
