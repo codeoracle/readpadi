@@ -86,7 +86,8 @@ Types:
 - "theory": a POP-style question ("Discuss…", "Explain…", "Enumerate and explain…"). "answer" is a marking guide of 4–6 bullet points worth 5 marks in total.
 Every question has "explanation" (1–2 sentences explaining why the answer is right, from the material), "page" (the number from the [Page N] markers), and "topic" (2–4 words naming the concept).${avoid}
 Reply with only a JSON array, for example:
-[{"type":"mcq","q":"Which of these is a general classification scheme?","options":["Library of Congress Classification","Sears List of Subject Headings","AACR2","MARC 21"],"answer":0,"explanation":"LCC classifies all knowledge; the others are subject headings, cataloguing rules and a format.","page":12,"topic":"Classification schemes"},{"type":"fib","q":"The ______ was devised by Melvil Dewey in 1876.","answer":"Dewey Decimal Classification","accept":["DDC"],"explanation":"The material credits Dewey with DDC, first published in 1876.","page":14,"topic":"Classification schemes"}]
+[{"type":"mcq","q":"Which of these is a renewable source of energy?","options":["Solar energy","Coal","Natural gas","Crude oil"],"answer":0,"explanation":"Sunlight is replenished naturally; the others are fossil fuels.","page":12,"topic":"Energy sources"},{"type":"fib","q":"The process by which plants make food using sunlight is called ______.","answer":"photosynthesis","accept":["photo-synthesis"],"explanation":"The material defines photosynthesis as food-making in green plants using light.","page":14,"topic":"Plant nutrition"}]
+(These examples show the format only. Your questions must come from the MATERIAL below, whatever its subject.)
 
 MATERIAL:
 ${mat}`;

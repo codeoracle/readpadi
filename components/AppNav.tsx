@@ -18,7 +18,7 @@ const icons: Record<string, React.ReactNode> = {
 export default function AppNav({ initials, staff, pendingCount }: { initials: string; staff: boolean; pendingCount: number }) {
   const path = usePathname();
   const items = [
-    { href: "/library", label: "Library", icon: "library" },
+    { href: "/library", label: "Home", icon: "library" },
     { href: "/quizzes", label: "Quizzes", icon: "quiz" },
     { href: "/locker", label: "Locker", icon: "locker" },
     { href: "/ranks", label: "Ranks", icon: "ranks" },

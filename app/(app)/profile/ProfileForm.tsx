@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useToast } from "@/components/Toast";
 import { fmtDate, LEVELS, levelLabel } from "@/lib/study";
@@ -27,7 +27,8 @@ export default function ProfileForm({ profile, email, schools }: { profile: Prof
   const lvl = useMyLevel();
   const [board, setBoard] = useState(p?.show_on_board ?? true);
   const [copied, setCopied] = useState(false);
-  const invite = typeof window !== "undefined" && p?.referral_code ? `${window.location.origin}/?ref=${p.referral_code}` : "";
+  const [invite, setInvite] = useState("");
+  useEffect(() => { if (p?.referral_code) setInvite(`${window.location.origin}/?ref=${p.referral_code}`); }, [p?.referral_code]);
   async function toggleBoard(v: boolean) { setBoard(v); await supabaseBrowser().from("profiles").update({ show_on_board: v }).eq("id", p!.id); toast(v ? "You appear on ranks" : "Hidden from ranks"); }
   async function copyInvite() { try { await navigator.clipboard.writeText(invite); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {} }
 
@@ -39,7 +40,7 @@ export default function ProfileForm({ profile, email, schools }: { profile: Prof
           <div className="field"><label className="lbl" htmlFor="pSchool">School</label><input id="pSchool" maxLength={120} list="schoolList" value={f.school} onChange={set("school")} required /><datalist id="schoolList">{[...new Set(["National Open University of Nigeria", ...schools])].map((s) => <option key={s} value={s} />)}</datalist></div>
         </div>
         <div className="row2">
-          <div className="field"><label className="lbl" htmlFor="pProg">Programme</label><input id="pProg" maxLength={120} value={f.programme} onChange={set("programme")} placeholder="B.Sc. Library and Information Science" /></div>
+          <div className="field"><label className="lbl" htmlFor="pProg">Programme</label><input id="pProg" maxLength={120} value={f.programme} onChange={set("programme")} placeholder="e.g. B.Sc. Mass Communication" /></div>
           <div className="field"><label className="lbl" htmlFor="pLevel">Level</label><select id="pLevel" value={f.level} onChange={set("level")}>{LEVELS.map((l) => <option key={l} value={l}>{levelLabel(l)}</option>)}</select></div>
         </div>
         <div className="row2">

@@ -52,11 +52,11 @@ export default function UploadForm({ userId, defaultSchool, existing, staff }: {
   return (
     <form className="panel form" onSubmit={submit} style={{ maxWidth: 640 }}>
       <div className="row2">
-        <div className="field"><label className="lbl" htmlFor="code">Course code</label><input id="code" required maxLength={24} placeholder="LIS 211" autoComplete="off" value={code} onChange={(e) => setCode(e.target.value)} /></div>
+        <div className="field"><label className="lbl" htmlFor="code">Course code</label><input id="code" required maxLength={24} placeholder="GST 103" autoComplete="off" value={code} onChange={(e) => setCode(e.target.value)} /></div>
         <div className="field"><label className="lbl" htmlFor="school">School</label><input id="school" list="schools" maxLength={120} value={school} onChange={(e) => setSchool(e.target.value)} /><datalist id="schools">{schools.map((s) => <option key={s} value={s} />)}</datalist></div>
       </div>
       {dupes.length > 0 && <div className="note">{dupes.map((d) => `${d.code} “${d.title}” is already ${d.status === "approved" ? "in the library" : "awaiting review"}`).join(". ")}. Only add this if it is a different or newer edition.</div>}
-      <div className="field"><label className="lbl" htmlFor="title">Course title</label><input id="title" required maxLength={160} placeholder="Organisation of Knowledge I" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+      <div className="field"><label className="lbl" htmlFor="title">Course title</label><input id="title" required maxLength={160} placeholder="Environment and Sustainable Development" value={title} onChange={(e) => setTitle(e.target.value)} /></div>
       <div className="field"><label className="lbl" htmlFor="desc">Note for reviewers (optional)</label><input id="desc" maxLength={500} placeholder="e.g. 2023 revised edition, modules 1–4" value={desc} onChange={(e) => setDesc(e.target.value)} /></div>
       <div className="field"><span className="lbl">Course material</span>
         <label className={`drop ${file ? "has" : ""}`} htmlFor="file">{file ? `${file.name} · ${(file.size / 1048576).toFixed(1)} MB` : `Choose the course PDF (up to ${MAX_MB} MB)`}</label>

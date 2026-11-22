@@ -24,11 +24,11 @@ export default async (req: Request) => {
   try { body = JSON.parse(raw); } catch { return json({ error: "Bad request" }, 400); }
   if (!Array.isArray(body.messages) || !body.messages.length || body.messages.length > 30) return json({ error: "Bad request" }, 400);
 
-  const credit = await fetch(`${SB}/rest/v1/rpc/consume_ai_credit`, {
-    method: "POST",
-    headers: { apikey: SERVICE, authorization: `Bearer ${SERVICE}`, "content-type": "application/json" },
-    body: JSON.stringify({ p_user: user.id }),
-  });
+  // New-style secret keys (sb_secret_…) go only in the apikey header; legacy JWT keys also work as a Bearer token.
+  const adminHeaders: Record<string, string> = { apikey: SERVICE, "content-type": "application/json" };
+  if (SERVICE.startsWith("eyJ")) adminHeaders.authorization = `Bearer ${SERVICE}`;
+  const rpc = (fn: string) => fetch(`${SB}/rest/v1/rpc/${fn}`, { method: "POST", headers: adminHeaders, body: JSON.stringify({ p_user: user.id }) });
+  const credit = await rpc("consume_ai_credit");
   if (!credit.ok) return json({ message: "Could not check your AI allowance. Try again." }, 503);
   const c = await credit.json();
   if (!c.allowed) {
@@ -49,7 +49,10 @@ export default async (req: Request) => {
     headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!upstream.ok) return new Response(await upstream.text(), { status: upstream.status, headers: { "content-type": "application/json" } });
+  if (!upstream.ok) {
+    if (!c.pro) await rpc("refund_ai_credit").catch(() => {});
+    return new Response(await upstream.text(), { status: upstream.status, headers: { "content-type": "application/json" } });
+  }
   return new Response(upstream.body, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", "x-accel-buffering": "no" } });
 };
 

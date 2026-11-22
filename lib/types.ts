@@ -2,7 +2,7 @@ export type Role = "student" | "moderator" | "admin";
 export interface Profile { id: string; email: string | null; name: string; school: string; programme: string; level: string; centre: string; session: string; role: Role; pro_until: string | null; referral_code?: string; show_on_board?: boolean }
 export interface Course { id: string; code: string; title: string; school: string; description: string; pages: number; file_path: string; file_bytes: number; status: "pending" | "approved" | "rejected"; reject_reason: string; uploaded_by: string | null; created_at: string }
 export interface Exam { course_id: string; exam_date: string; exam_time: string; mode: "cbt" | "pop"; venue: string; notes: string }
-export interface Progress { course_id: string; seen: string; last_page: number }
+export interface Progress { course_id: string; seen: string; last_page: number; updated_at?: string }
 export interface Note { id: string; course_id: string; label: string; body: string; page_from: number | null; page_to: number | null; created_at: string }
 export type QType = "mcq" | "fib" | "theory";
 export interface Question { id: string; type: QType; q: string; options?: string[]; answer: number | string; accept?: string[]; marks?: number; explanation: string; page: number | null; topic: string }

@@ -156,8 +156,8 @@ function AddForm({ userId, level, onCancel, onAdded }: { userId: string; level: 
     <form className="panel form" onSubmit={save} style={{ marginBottom: 18, maxWidth: 720 }}>
       <h2 style={{ fontSize: 18 }}>Add a document</h2>
       <div className="field">
-        <label className={`drop ${file ? "has" : ""}`} htmlFor="lfile">{file ? `${file.name} · ${(file.size / 1048576).toFixed(1)} MB` : "Choose a file or take a photo (PDF, JPG, PNG, Word · up to 20 MB)"}</label>
-        <input id="lfile" type="file" accept="application/pdf,image/*,.docx" capture="environment" hidden onChange={(e) => setFile(e.target.files?.[0] || null)} />
+        <label className={`drop ${file ? "has" : ""}`} htmlFor="lfile">{file ? `${file.name} · ${(file.size / 1048576).toFixed(1)} MB` : "Choose a file or photo (PDF, JPG, PNG, Word · up to 20 MB)"}</label>
+        <input id="lfile" type="file" accept="application/pdf,image/*,.docx" hidden onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
       {file && (file.type.startsWith("image/") || file.type === "application/pdf") && (
         <div className="meta"><button type="button" className="btn sm" onClick={readWithAi} disabled={!!busy}>{busy === "ai" ? <><span className="spin" /> Reading…</> : "Fill in with AI"}</button><span className="hint">Reads the amount, date and session from a receipt or form. Uses 1 AI action.</span></div>

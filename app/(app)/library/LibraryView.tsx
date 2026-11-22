@@ -18,6 +18,17 @@ export function DueChip({ x }: { x?: Exam | null }) {
   return <span className={`chip ${d <= 7 ? "bad" : d <= 21 ? "warn" : ""}`}>exam {d === 0 ? "today" : `in ${d} day${d === 1 ? "" : "s"}`}</span>;
 }
 
+function greeting() {
+  const h = Number(new Date().toLocaleString("en-GB", { hour: "numeric", hour12: false, timeZone: "Africa/Lagos" }));
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+}
+function ago(iso: string) {
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  if (m < 60) return m <= 1 ? "just now" : `${m} min ago`;
+  const h = Math.round(m / 60); if (h < 24) return `${h} h ago`;
+  const d = Math.round(h / 24); return d === 1 ? "yesterday" : `${d} days ago`;
+}
+
 export default function LibraryView({ courses, myPending, exams, progress, attempts, stats, profile }: Props) {
   const [q, setQ] = useState("");
   const mySchool = profile?.school?.trim().toLowerCase() || "";
@@ -42,15 +53,51 @@ export default function LibraryView({ courses, myPending, exams, progress, attem
   const timetable = exams.filter((x) => (daysTo(x.exam_date) ?? -1) >= 0).sort((a, b) => (a.exam_date + a.exam_time).localeCompare(b.exam_date + b.exam_time));
   const courseBy = Object.fromEntries(courses.map((c) => [c.id, c]));
   const p = profile;
+  const reading = progress
+    .filter((pr) => courseBy[pr.course_id])
+    .slice(0, 3)
+    .map((pr) => ({ c: courseBy[pr.course_id], pr }));
 
   return (
     <>
       <div className="page-head">
         <div>
-          <h1>{p?.name ? `Welcome, ${p.name.split(" ")[0]}` : "The library"}</h1>
-          <p>Every course material shared by students. Open one to read with the professor, make notes, and sit practice exams.</p>
+          <h1>{greeting()}{p?.name ? `, ${p.name.split(" ")[0]}` : ""}</h1>
+          <p>{reading.length ? "Pick up where you stopped, or start something new." : "Open a course below to start reading with your AI professor."}</p>
         </div>
-        <Link href="/upload" className="btn pri">Add course material</Link>
+      </div>
+
+      {reading.length > 0 ? (
+        <section style={{ marginBottom: 18 }}>
+          <div className="section-t" style={{ marginTop: 0 }}><h2>Continue reading</h2></div>
+          <div className="continue">
+            {reading.map(({ c, pr }, i) => {
+              const seen = (pr.seen || "").split("").filter((x) => x === "1").length;
+              const pct = c.pages ? Math.min(100, Math.round((seen / c.pages) * 100)) : 0;
+              return (
+                <Link key={c.id} href={`/course/${c.id}`} className={`resume ${i === 0 ? "first" : ""}`}>
+                  <span className="lbl">{c.code}{pr.updated_at ? ` · ${ago(pr.updated_at)}` : ""}</span>
+                  <b className="resume-title">{c.title}</b>
+                  <div className="bar"><i style={{ width: `${pct}%` }} /></div>
+                  <span className="meta" style={{ justifyContent: "space-between" }}><span className="hint">Page {Math.min(pr.last_page || 1, c.pages || 1)} of {c.pages || "?"} · {pct}% read</span><span className={`btn sm ${i === 0 ? "pri" : ""}`}>Resume</span></span>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : courses.length > 0 && (
+        <Link href={`/course/${(courses.find((c) => mySchool && c.school.trim().toLowerCase() === mySchool) || courses[0]).id}`} className="panel start-card">
+          <span className="seal">GO</span>
+          <span style={{ minWidth: 0 }}><b>Start reading</b><div className="hint">Open {(courses.find((c) => mySchool && c.school.trim().toLowerCase() === mySchool) || courses[0]).code} and ask the professor about the first page. Or search the library below.</div></span>
+          <span className="btn pri sm">Open</span>
+        </Link>
+      )}
+
+      <div className="quick">
+        <Link href="/quizzes" className="quick-item"><b>Play a quiz</b><span className="hint">Quizzes set by classmates</span></Link>
+        <Link href="/quizzes/new" className="quick-item"><b>Set a quiz</b><span className="hint">Write questions or draft with AI</span></Link>
+        <Link href="/locker" className="quick-item"><b>Locker</b><span className="hint">Receipts, forms and results</span></Link>
+        <Link href="/upload" className="quick-item"><b>Add material</b><span className="hint">Share a course PDF</span></Link>
       </div>
 
       <LevelCard />
@@ -90,9 +137,9 @@ export default function LibraryView({ courses, myPending, exams, progress, attem
         </>
       )}
 
-      <div className="section-t" style={{ marginTop: 0 }}><h2>Courses</h2><span className="hint">{shown.length} of {courses.length}</span></div>
+      <div className="section-t"><h2>Library</h2><span className="hint">{shown.length} of {courses.length} courses</span></div>
       <div className="search">
-        <input className="input" type="search" placeholder="Search by code or title, e.g. LIS 211" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search courses" />
+        <input className="input" type="search" placeholder="Search by course code or title, e.g. GST 103" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search courses" />
         {schools.length > 1 && (
           <select className="input" style={{ width: "auto", maxWidth: "100%" }} value={school} onChange={(e) => setSchool(e.target.value)} aria-label="School">
             <option value="all">All schools</option>
@@ -131,7 +178,6 @@ export default function LibraryView({ courses, myPending, exams, progress, attem
           })}
         </div>
       )}
-      <p className="hint" style={{ marginTop: 24 }}>Added {courses.length ? fmtDate(courses.reduce((m, c) => (c.created_at > m ? c.created_at : m), courses[0].created_at)) : "—"} most recently.</p>
     </>
   );
 }

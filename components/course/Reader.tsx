@@ -43,6 +43,7 @@ export default function Reader({ ctx, initialSeen }: { ctx: Ctx; initialSeen: st
       const doc = await openPdf(course.id, course.file_path);
       setPages(doc.numPages);
       const n = Math.min(Math.max(1, page), doc.numPages);
+      if (n !== page) { setPage(n); return; }
       const pg = await doc.getPage(n);
       const base = pg.getViewport({ scale: 1 });
       const w = Math.max(280, box.clientWidth - 2);

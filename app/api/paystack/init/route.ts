@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const plan = ((s?.plans ?? []) as { id: string; days: number; price_ngn: number }[]).find((p) => p.id === body.plan);
   if (!plan) return NextResponse.json({ error: "Choose a plan" }, { status: 400 });
   const amount = Math.round(plan.price_ngn * 100);
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+  const origin = new URL(req.url).origin; // return to the site the student paid from
   const reference = `sc_${user.id.slice(0, 8)}_${Date.now().toString(36)}`;
   try {
     await supabaseAdmin().from("payments").insert({ reference, user_id: user.id, amount_kobo: amount, status: "pending", plan: plan.id, days: plan.days });

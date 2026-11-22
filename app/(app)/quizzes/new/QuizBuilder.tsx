@@ -72,7 +72,7 @@ export default function QuizBuilder({ courses, initialCourse, refCode }: { cours
   return (
     <div style={{ display: "grid", gap: 16, maxWidth: 820 }}>
       <div className="panel form">
-        <div className="field"><label className="lbl" htmlFor="qt">Quiz title</label><input id="qt" maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. LIS 211 Units 1–3 revision" /></div>
+        <div className="field"><label className="lbl" htmlFor="qt">Quiz title</label><input id="qt" maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. GST 103 Units 1–3 revision" /></div>
         <div className="field"><label className="lbl" htmlFor="qd">Description (optional)</label><input id="qd" maxLength={500} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="What it covers, who it is for" /></div>
         <div className="row2">
           <div className="field"><label className="lbl" htmlFor="qc">Course (optional)</label><select id="qc" value={course} onChange={(e) => setCourse(e.target.value)}><option value="">Not linked to a course</option>{courses.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.title}</option>)}</select></div>
@@ -91,11 +91,11 @@ export default function QuizBuilder({ courses, initialCourse, refCode }: { cours
               <span className="lbl">Question {i + 1}</span>
               <div className="seg">{(["mcq", "tf", "fib"] as Kind[]).map((k) => <button key={k} type="button" aria-pressed={it.kind === k} onClick={() => upd(it.id, { ...blank(k), id: it.id, q: it.q, explanation: it.explanation })}>{{ mcq: "Multiple choice", tf: "True / False", fib: "Fill the gap" }[k]}</button>)}</div>
             </div>
-            <div className="field"><textarea rows={2} maxLength={600} value={it.q} onChange={(e) => upd(it.id, { q: e.target.value })} placeholder={i > 0 ? `Type question ${i + 1}…` : it.kind === "fib" ? "e.g. The ______ was devised by Melvil Dewey in 1876." : it.kind === "tf" ? "e.g. AACR2 is a classification scheme." : "e.g. Which of these is a general classification scheme?"} aria-label={`Question ${i + 1}`} style={{ minHeight: 64 }} /></div>
+            <div className="field"><textarea rows={2} maxLength={600} value={it.q} onChange={(e) => upd(it.id, { q: e.target.value })} placeholder={i > 0 ? `Type question ${i + 1}…` : it.kind === "fib" ? "e.g. The process by which plants make food is called ______." : it.kind === "tf" ? "e.g. Coal is a renewable source of energy." : "e.g. Which of these is a renewable source of energy?"} aria-label={`Question ${i + 1}`} style={{ minHeight: 64 }} /></div>
             {it.kind === "fib" ? (
               <div className="row2">
-                <div className="field"><label className="lbl">Correct answer</label><input maxLength={120} value={it.text} onChange={(e) => upd(it.id, { text: e.target.value })} placeholder="Dewey Decimal Classification" /></div>
-                <div className="field"><label className="lbl">Also accept (comma-separated)</label><input maxLength={240} value={it.accept} onChange={(e) => upd(it.id, { accept: e.target.value })} placeholder="DDC, Dewey Decimal" /></div>
+                <div className="field"><label className="lbl">Correct answer</label><input maxLength={120} value={it.text} onChange={(e) => upd(it.id, { text: e.target.value })} placeholder="photosynthesis" /></div>
+                <div className="field"><label className="lbl">Also accept (comma-separated)</label><input maxLength={240} value={it.accept} onChange={(e) => upd(it.id, { accept: e.target.value })} placeholder="photo-synthesis" /></div>
               </div>
             ) : (
               <div style={{ display: "grid", gap: 8 }}>

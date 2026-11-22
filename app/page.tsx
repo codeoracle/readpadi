@@ -34,14 +34,14 @@ export default async function Landing() {
             </div>
           </div>
           <div className="demo-card" aria-hidden="true">
-            <div className="meta"><span className="chip acc">LIS 211</span><span className="lbl">Question 4 of 20 · Multiple choice</span></div>
-            <p style={{ fontFamily: "var(--f-read)", fontSize: 18, margin: 0 }}>Which of these is a general classification scheme?</p>
+            <div className="meta"><span className="chip acc">GST 103</span><span className="lbl">Question 4 of 20 · Multiple choice</span></div>
+            <p style={{ fontFamily: "var(--f-read)", fontSize: 18, margin: 0 }}>Which of these is a renewable source of energy?</p>
             <div className="opts">
-              {["Library of Congress Classification", "Sears List of Subject Headings", "AACR2", "MARC 21"].map((o, i) => (
+              {["Solar energy", "Coal", "Natural gas", "Crude oil"].map((o, i) => (
                 <div key={o} className="opt" aria-pressed={i === 0}><span className="k">{"ABCD"[i]}</span><span>{o}</span></div>
               ))}
             </div>
-            <div className="note ok">Correct. LCC classifies all knowledge; the others are subject headings, cataloguing rules and a format. <b>Page 12.</b> +10 XP</div>
+            <div className="note ok">Correct. Sunlight is replenished naturally; coal, natural gas and crude oil are fossil fuels that run out. <b>Page 12.</b> +10 XP</div>
           </div>
         </section>
 
