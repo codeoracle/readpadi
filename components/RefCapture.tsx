@@ -2,7 +2,7 @@
 import { useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
-const KEY = "akada.ref";
+const KEY = "readpadi.ref";
 /** On public pages: remember ?ref=code. Inside the app: claim it once after sign-up. */
 export function RefCapture() {
   useEffect(() => {

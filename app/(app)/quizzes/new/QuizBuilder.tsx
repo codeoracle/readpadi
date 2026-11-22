@@ -10,7 +10,7 @@ import SharePanel from "@/components/SharePanel";
 type Kind = "mcq" | "tf" | "fib";
 interface Item { id: string; kind: Kind; q: string; options: string[]; answer: number; text: string; accept: string; explanation: string }
 const blank = (kind: Kind = "mcq"): Item => ({ id: newId(), kind, q: "", options: kind === "tf" ? ["True", "False"] : ["", "", "", ""], answer: kind === "fib" ? -1 : 0, text: "", accept: "", explanation: "" });
-const DRAFT = "akada.quizDraft";
+const DRAFT = "readpadi.quizDraft";
 
 function problems(it: Item): string | null {
   if (!it.q.trim()) return "Write the question.";

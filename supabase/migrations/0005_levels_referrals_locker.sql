@@ -1,10 +1,9 @@
 -- ============ profiles: referral code, referrer, leaderboard opt-out ============
-alter table public.profiles add column if not exists referral_code text unique;
+alter table public.profiles add column if not exists referral_code text unique default lower(substr(md5(gen_random_uuid()::text), 1, 7));
 alter table public.profiles add column if not exists referred_by uuid references public.profiles (id) on delete set null;
 alter table public.profiles add column if not exists show_on_board boolean not null default true;
 create index if not exists profiles_referred_by_idx on public.profiles (referred_by);
 create index if not exists profiles_school_idx on public.profiles (lower(school));
-update public.profiles set referral_code = lower(substr(md5(id::text || clock_timestamp()::text), 1, 7)) where referral_code is null;
 grant update (show_on_board) on public.profiles to authenticated;
 
 create or replace function public.handle_new_user()
@@ -41,7 +40,6 @@ begin
     on conflict (user_id, day) do update set xp = public.study_log.xp + excluded.xp;
   return new;
 end $$;
-drop trigger if exists attempts_xp on public.attempts;
 create trigger attempts_xp after insert on public.attempts for each row execute function public.xp_from_attempt();
 
 -- Reading: 1 XP per new page read, capped at 100 reading XP per day.
@@ -60,7 +58,6 @@ begin
   end if;
   return new;
 end $$;
-drop trigger if exists progress_xp on public.progress;
 create trigger progress_xp after insert or update of seen on public.progress for each row execute function public.xp_from_reading();
 revoke execute on function public.xp_from_attempt(), public.xp_from_reading() from public, anon, authenticated;
 
@@ -170,7 +167,6 @@ begin
   if v_n >= v_max then raise exception 'locker_full' using hint = 'Free accounts can keep ' || v_max || ' documents. Get Pro for unlimited.'; end if;
   return new;
 end $$;
-drop trigger if exists locker_limit on public.locker_items;
 create trigger locker_limit before insert on public.locker_items for each row execute function public.locker_limit();
 revoke execute on function public.locker_limit() from public, anon, authenticated;
 

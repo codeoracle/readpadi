@@ -47,8 +47,7 @@ begin
   return json_build_object('allowed', true, 'pro', false, 'used', q.used, 'limit', v_limit, 'resets_at', q.window_start + make_interval(hours => v_hours));
 end $$;
 
-drop function if exists public.my_ai_status();
-create function public.my_ai_status()
+create or replace function public.my_ai_status_v2()
 returns json language plpgsql stable security definer set search_path = '' as $$
 declare v_limit int; v_hours int; q public.ai_quota%rowtype; p public.profiles%rowtype; v_fresh boolean;
 begin
@@ -57,16 +56,15 @@ begin
   select * into q from public.ai_quota where user_id = (select auth.uid());
   v_fresh := q.user_id is null or now() >= q.window_start + make_interval(hours => v_hours);
   return json_build_object(
-    'used', case when v_fresh then 0 else q.used end,
-    'limit', v_limit,
-    'window_hours', v_hours,
+    'used', case when v_fresh then 0 else q.used end, 'limit', v_limit, 'window_hours', v_hours,
     'resets_at', case when v_fresh then null else q.window_start + make_interval(hours => v_hours) end,
     'pro', coalesce(p.pro_until > now(), false) or coalesce(p.role in ('admin', 'moderator'), false),
-    'pro_until', p.pro_until
-  );
+    'pro_until', p.pro_until);
 end $$;
-revoke execute on function public.my_ai_status() from public, anon;
-grant execute on function public.my_ai_status() to authenticated;
+create or replace function public.my_ai_status()
+returns json language sql stable security definer set search_path = '' as $$ select public.my_ai_status_v2(); $$;
+revoke execute on function public.my_ai_status(), public.my_ai_status_v2() from public, anon;
+grant execute on function public.my_ai_status(), public.my_ai_status_v2() to authenticated;
 
 -- Pro is granted for the days recorded on the payment row (set from the chosen plan at checkout).
 create or replace function public.grant_pro(p_reference text, p_user uuid, p_amount_kobo int)

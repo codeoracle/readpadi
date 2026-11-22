@@ -47,11 +47,11 @@ export default async function Landing() {
 
         <section id="how" className="feature-grid">
           <div className="feature"><h3>An AI professor on every page</h3><p>Ask about anything you are reading. Plain explanations, the points examiners love, and quick quizzes on the page in front of you.</p></div>
-          <div className="feature"><h3>Practice exams from your material</h3><p>e-Exam (CBT) multiple choice and fill-in-the-gap, or theory (POP) questions marked out of 5. Timed, and graded on the NOUN scale.</p></div>
-          <div className="feature"><h3>Your school Locker</h3><p>Fees receipts, course forms, results, admission letter and ID card, sorted by year and semester. Snap a receipt and the AI files it for you.</p></div>
-          <div className="feature"><h3>Level up as you study</h3><p>Earn XP for every page and every mark. Keep your streak, climb from Fresher to Professor, and see where you rank in your school this week.</p></div>
-          <div className="feature"><h3>A library you share</h3><p>Add a course material once and your whole class studies from it. Send any course to your WhatsApp group with one tap.</p></div>
-          <div className="feature"><h3>Know what to reread</h3><p>Scores by topic, the questions you keep missing, and an exam timetable with countdowns. Synced across your phone and laptop.</p></div>
+          <div className="feature"><h3>Practice exams from your material</h3><p>e-Exam (CBT) or theory (POP) questions set from the course itself, timed and graded on the NOUN scale, with the pages to reread.</p></div>
+          <div className="feature"><h3>Quiz your classmates</h3><p>Write your own quiz or turn a practice test into one. Send the link to your WhatsApp group and watch the leaderboard fill up.</p></div>
+          <div className="feature"><h3>Your school Locker</h3><p>Fees receipts, course forms, results, admission letter and ID card, sorted by session. Snap a receipt and the AI files it for you.</p></div>
+          <div className="feature"><h3>Level up as you study</h3><p>Earn XP for every page and every mark. Keep your streak, climb from Fresher to Professor, and see where you rank in your school.</p></div>
+          <div className="feature"><h3>A library you share</h3><p>Add a course material once and your whole class studies from it. Results, notes and exam dates sync across phone and laptop.</p></div>
         </section>
 
         <section style={{ marginBottom: 48 }}>

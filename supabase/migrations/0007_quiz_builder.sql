@@ -3,7 +3,6 @@ alter table public.challenges add column if not exists description text not null
 alter table public.challenges add column if not exists is_public boolean not null default false;
 create index if not exists challenges_public_idx on public.challenges (is_public, course_id, created_at desc) where is_public;
 
-drop function if exists public.create_challenge(text, uuid, jsonb, int);
 create or replace function public.create_challenge(p_title text, p_course uuid, p_items jsonb, p_time_limit int default 0, p_description text default '', p_public boolean default false)
 returns text language plpgsql security definer set search_path = '' as $$
 declare v_uid uuid := (select auth.uid()); v_code text; v_id uuid; v_q jsonb := '[]'; v_k jsonb := '[]'; it jsonb; i int := 0; v_recent int; v_nopt int; v_ans int;
