@@ -15,7 +15,7 @@ function toE164(raw: string) {
 
 export default function LoginForm({ next }: { next: string }) {
   const router = useRouter();
-  const [mode, setMode] = useState<"email" | "phone">("email");
+  const mode = "email" as "email" | "phone";
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState(""); const [code, setCode] = useState("");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "verifying" | "error">("idle");
@@ -25,7 +25,7 @@ export default function LoginForm({ next }: { next: string }) {
 
   async function google() {
     const { error } = await supabaseBrowser().auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirect() } });
-    if (error) fail(error.message.includes("not enabled") ? "Google sign-in is not switched on yet. Use your email or phone instead." : error.message);
+    if (error) fail(error.message.includes("not enabled") ? "Google sign-in is not switched on yet. Use your email instead." : error.message);
   }
   async function magic(e: React.FormEvent) {
     e.preventDefault();
@@ -80,23 +80,11 @@ export default function LoginForm({ next }: { next: string }) {
         Continue with Google
       </button>
       <div className="hint" style={{ textAlign: "center" }}>or</div>
-      <div className="seg" style={{ justifyContent: "center" }}>
-        <button type="button" aria-pressed={mode === "email"} onClick={() => { setMode("email"); setState("idle"); setMsg(""); }}>Email</button>
-        <button type="button" aria-pressed={mode === "phone"} onClick={() => { setMode("phone"); setState("idle"); setMsg(""); }}>Phone number</button>
-      </div>
-      {mode === "email" ? (
         <form onSubmit={magic} className="form">
           <div className="field"><label className="lbl" htmlFor="email">Email</label><input id="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" /></div>
           {state === "error" && <div className="note err">{msg}</div>}
           <button className="btn pri lg" disabled={state === "sending"}>{state === "sending" ? <><span className="spin" /> Sending…</> : "Email me a sign-in link"}</button>
         </form>
-      ) : (
-        <form onSubmit={sendSms} className="form">
-          <div className="field"><label className="lbl" htmlFor="phone">Phone number</label><input id="phone" type="tel" inputMode="tel" autoComplete="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0803 123 4567" /><span className="hint">Nigerian numbers work as written. For other countries, start with + and the country code.</span></div>
-          {state === "error" && <div className="note err">{msg}</div>}
-          <button className="btn pri lg" disabled={state === "sending"}>{state === "sending" ? <><span className="spin" /> Sending…</> : "Text me a code"}</button>
-        </form>
-      )}
       <p className="hint" style={{ margin: 0 }}>By continuing you agree to use course materials for personal study only.</p>
     </div>
   );
