@@ -49,7 +49,7 @@ export default async function Landing() {
           <div className="feature"><h3>An AI professor on every page</h3><p>Ask about anything you are reading. Plain explanations, the points examiners love, and quick quizzes on the page in front of you.</p></div>
           <div className="feature"><h3>Practice exams from your material</h3><p>e-Exam (CBT) or theory (POP) questions set from the course itself, timed and graded on the NOUN scale, with the pages to reread.</p></div>
           <div className="feature"><h3>Quiz your classmates</h3><p>Write your own quiz or turn a practice test into one. Send the link to your WhatsApp group and watch the leaderboard fill up.</p></div>
-          <div className="feature"><h3>Your school Locker</h3><p>Fees receipts, course forms, results, admission letter and ID card, sorted by session. Snap a receipt and the AI files it for you.</p></div>
+          <div className="feature"><h3>Your school Locker</h3><p>Fees receipts, course forms, results, admission letter and ID card, sorted by session and semester, with what you paid each year.</p></div>
           <div className="feature"><h3>Level up as you study</h3><p>Earn XP for every page and every mark. Keep your streak, climb from Fresher to Professor, and see where you rank in your school.</p></div>
           <div className="feature"><h3>A library you share</h3><p>Add a course material once and your whole class studies from it. Results, notes and exam dates sync across phone and laptop.</p></div>
         </section>
@@ -64,7 +64,7 @@ export default async function Landing() {
               <div key={p.id} className="panel" style={i === 1 ? { borderColor: "var(--accent)" } : undefined}>
                 <span className="lbl" style={i === 1 ? { color: "var(--accent)" } : undefined}>{p.label}{i === 1 ? " · most popular" : ""}</span>
                 <h2 style={{ fontSize: 28 }}>{naira(p.price_ngn)} <span className="hint" style={{ fontSize: 14 }}>/ {p.days} days</span></h2>
-                <ul><li>Unlimited AI professor and exams</li><li>Unlimited Locker and AI receipt filing</li><li>Card, bank transfer or USSD</li></ul>
+                <ul><li>Unlimited AI professor and exams</li><li>Unlimited Locker storage</li><li>Card, bank transfer or USSD</li></ul>
                 <Link href={`/login?next=/upgrade`} className={`btn ${i === 1 ? "pri" : ""}`}>Get {p.label.toLowerCase()}</Link>
               </div>
             ))}

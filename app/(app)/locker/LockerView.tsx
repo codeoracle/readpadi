@@ -2,8 +2,6 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
-import { askJson, aiMessage } from "@/lib/ai";
-import { openLocalPdf } from "@/lib/pdf";
 import { fmtDate, levelLabel, naira, newId } from "@/lib/study";
 import { useToast } from "@/components/Toast";
 import type { LockerItem } from "@/lib/types";
@@ -13,26 +11,13 @@ const SEMS = ["First semester", "Second semester", "Summer", ""];
 function currentSession() { const d = new Date(); const y = d.getFullYear(); return d.getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`; }
 const sessions = () => { const [a] = currentSession().split("/").map(Number); return Array.from({ length: 7 }, (_, i) => `${a - i}/${a - i + 1}`); };
 
-async function toImage(file: File): Promise<Blob> {
-  if (file.type.startsWith("image/") && file.type !== "image/heic") {
-    const bmp = await createImageBitmap(file); const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
-    const cv = document.createElement("canvas"); cv.width = bmp.width * s; cv.height = bmp.height * s; cv.getContext("2d")!.drawImage(bmp, 0, 0, cv.width, cv.height);
-    return new Promise((r) => cv.toBlob((b) => r(b!), "image/jpeg", 0.85));
-  }
-  if (file.type === "application/pdf") {
-    const doc = await openLocalPdf(file); const pg = await doc.getPage(1); const v = pg.getViewport({ scale: 1 }); const vp = pg.getViewport({ scale: Math.min(2, 1400 / v.width) });
-    const cv = document.createElement("canvas"); cv.width = vp.width; cv.height = vp.height; await pg.render({ canvasContext: cv.getContext("2d")!, viewport: vp }).promise;
-    return new Promise((r) => cv.toBlob((b) => r(b!), "image/jpeg", 0.85));
-  }
-  throw new Error("The AI can read photos (JPG, PNG) and PDFs.");
-}
-
 export default function LockerView({ userId, initial, level, pro, freeMax }: { userId: string; initial: LockerItem[]; level: string; pro: boolean; freeMax: number }) {
   const [items, setItems] = useState(initial);
   const [year, setYear] = useState<string>("all");
   const [cat, setCat] = useState<string>("all");
   const [adding, setAdding] = useState(initial.length === 0);
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const toast = useToast(); const sb = supabaseBrowser();
 
   const years = useMemo(() => [...new Set(items.map((i) => i.academic_year || "No session"))].sort().reverse(), [items]);
@@ -68,7 +53,7 @@ export default function LockerView({ userId, initial, level, pro, freeMax }: { u
         <div className="stat"><span className="lbl">Sessions</span><b>{years.filter((y) => y !== "No session").length}</b></div>
       </div>
       {!pro && items.length >= freeMax - 3 && <div className="note" style={{ marginBottom: 14 }}>{items.length >= freeMax ? "Your free Locker is full." : `You can add ${freeMax - items.length} more document${freeMax - items.length === 1 ? "" : "s"} on the free plan.`} <Link className="link" href="/upgrade">Get a pass</Link> for unlimited storage.</div>}
-      {adding && <AddForm userId={userId} level={level} onCancel={() => setAdding(false)} onAdded={(i) => { setItems([i, ...items]); setAdding(false); toast("Saved to your Locker"); }} />}
+      {adding && <DocForm userId={userId} level={level} onCancel={() => setAdding(false)} onSaved={(i) => { setItems([i, ...items]); setAdding(false); toast("Saved to your Locker"); }} />}
 
       {items.length > 0 && (
         <div className="search" style={{ alignItems: "center" }}>
@@ -84,7 +69,10 @@ export default function LockerView({ userId, initial, level, pro, freeMax }: { u
           {Object.entries(sems).map(([s, list]) => (
             <div key={s} style={{ marginBottom: 12 }}>
               <div className="lbl" style={{ margin: "4px 0 6px" }}>{s}</div>
-              <div className="hist">{list.map((i) => (
+              <div className="hist">{list.map((i) => editing === i.id ? (
+                <DocForm key={i.id} userId={userId} level={level} item={i} onCancel={() => setEditing(null)}
+                  onSaved={(u) => { setItems(items.map((x) => (x.id === u.id ? u : x))); setEditing(null); toast("Document updated"); }} />
+              ) : (
                 <div key={i.id} className="hrow" style={{ gridTemplateColumns: "minmax(0,1fr) auto" }}>
                   <button onClick={() => open(i)} style={{ all: "unset", cursor: "pointer", minWidth: 0 }}>
                     <b>{i.title}</b>
@@ -92,6 +80,7 @@ export default function LockerView({ userId, initial, level, pro, freeMax }: { u
                   </button>
                   <span className="meta">
                     <button className="btn sm" onClick={() => open(i)}>Open</button>
+                    <button className="btn sm" onClick={() => { setEditing(i.id); setConfirmDel(null); }}>Edit</button>
                     {confirmDel === i.id ? <><button className="btn sm danger" onClick={() => del(i)}>Delete</button><button className="btn sm ghost" onClick={() => setConfirmDel(null)}>Keep</button></> : <button className="btn sm ghost danger" onClick={() => setConfirmDel(i.id)} aria-label="Delete">✕</button>}
                   </span>
                 </div>
@@ -104,79 +93,77 @@ export default function LockerView({ userId, initial, level, pro, freeMax }: { u
   );
 }
 
-function AddForm({ userId, level, onCancel, onAdded }: { userId: string; level: string; onCancel: () => void; onAdded: (i: LockerItem) => void }) {
+function DocForm({ userId, level, item, onCancel, onSaved }: { userId: string; level: string; item?: LockerItem; onCancel: () => void; onSaved: (i: LockerItem) => void }) {
+  const editing = !!item;
   const [file, setFile] = useState<File | null>(null);
-  const [f, setF] = useState({ title: "", category: "receipt", academic_year: currentSession(), semester: "First semester", level, amount_ngn: "", doc_date: "", notes: "" });
-  const [busy, setBusy] = useState<"" | "ai" | "save">(""); const [err, setErr] = useState<React.ReactNode>("");
+  const [f, setF] = useState({
+    title: item?.title ?? "", category: item?.category ?? "receipt", academic_year: item?.academic_year || currentSession(),
+    semester: item?.semester ?? "First semester", level: item?.level ?? level,
+    amount_ngn: item?.amount_ngn != null ? String(item.amount_ngn) : "", doc_date: item?.doc_date ?? "", notes: item?.notes ?? "",
+  });
+  const [busy, setBusy] = useState(false); const [err, setErr] = useState<React.ReactNode>("");
+  const pid = editing ? `e${item!.id.slice(0, 6)}-` : "";
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
-
-  async function readWithAi() {
-    if (!file) return;
-    setBusy("ai"); setErr("");
-    try {
-      const img = await toImage(file);
-      const r = await askJson(`This is a document a Nigerian university student is filing (often a school fees or portal payment receipt, a course registration form, a result slip, an admission letter, or an ID card). Read it and reply with only a JSON object:
-{"title": short descriptive title, e.g. "School fees receipt" or "Course registration form", "category": one of ${Object.keys(CATS).join(", ")}, "amount_ngn": total amount paid in naira as a number or null, "doc_date": "YYYY-MM-DD" or null, "academic_year": session like "2025/2026" or null, "semester": "First semester" | "Second semester" | null, "level": e.g. "200" or null, "notes": reference or transaction number if shown, else ""}`, { images: [img], maxTokens: 600 });
-      setF((cur) => ({
-        ...cur,
-        title: r.title || cur.title, category: CATS[r.category] ? r.category : cur.category,
-        amount_ngn: r.amount_ngn != null ? String(r.amount_ngn) : cur.amount_ngn, doc_date: r.doc_date || cur.doc_date,
-        academic_year: r.academic_year || cur.academic_year, semester: r.semester || cur.semester, level: r.level ? String(r.level).replace(/\D/g, "") || cur.level : cur.level,
-        notes: r.notes ? String(r.notes).slice(0, 200) : cur.notes,
-      }));
-    } catch (e) { setErr(<>{aiMessage(e)}{(e as any)?.code === "limit" && <> <Link className="link" href="/upgrade">Get a pass</Link></>}</>); }
-    setBusy("");
-  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault(); setErr("");
-    if (!file) return setErr("Choose a file or take a photo.");
-    if (file.size > 20 * 1048576) return setErr("That file is over 20 MB.");
+    if (!editing && !file) return setErr("Choose a file or photo.");
+    if (file && file.size > 20 * 1048576) return setErr("That file is over 20 MB.");
     if (!f.title.trim()) return setErr("Give the document a title.");
-    setBusy("save");
+    const amount = f.amount_ngn.trim() === "" ? null : Number(f.amount_ngn.replace(/[^\d.]/g, ""));
+    if (amount != null && !Number.isFinite(amount)) return setErr("Enter the amount as a number, e.g. 45000.");
+    setBusy(true);
     const sb = supabaseBrowser();
-    const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const path = `${userId}/${newId()}.${ext}`;
-    const up = await sb.storage.from("locker").upload(path, file, { contentType: file.type || undefined });
-    if (up.error) { setBusy(""); return setErr(up.error.message.includes("mime") ? "That file type is not supported. Use PDF, JPG, PNG or Word." : up.error.message); }
-    const { data, error } = await sb.from("locker_items").insert({
+    let upload: { file_path: string; file_bytes: number; mime: string } | null = null;
+    if (file) {
+      const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const path = `${userId}/${newId()}.${ext}`;
+      const up = await sb.storage.from("locker").upload(path, file, { contentType: file.type || undefined });
+      if (up.error) { setBusy(false); return setErr(/mime|type/i.test(up.error.message) ? "That file type is not supported. Use PDF, JPG, PNG or Word." : up.error.message); }
+      upload = { file_path: path, file_bytes: file.size, mime: file.type };
+    }
+    const fields = {
       title: f.title.trim(), category: f.category, academic_year: f.academic_year, semester: f.semester, level: f.level,
-      amount_ngn: f.amount_ngn === "" ? null : Number(f.amount_ngn.replace(/[^\d.]/g, "")), doc_date: f.doc_date || null, notes: f.notes.trim(),
-      file_path: path, file_bytes: file.size, mime: file.type,
-    }).select().single();
-    setBusy("");
+      amount_ngn: amount, doc_date: f.doc_date || null, notes: f.notes.trim(), ...(upload || {}),
+    };
+    const q = editing ? sb.from("locker_items").update(fields).eq("id", item!.id) : sb.from("locker_items").insert(fields);
+    const { data, error } = await q.select().single();
+    setBusy(false);
     if (error) {
-      await sb.storage.from("locker").remove([path]);
+      if (upload) await sb.storage.from("locker").remove([upload.file_path]);
       return setErr(error.message.includes("locker_full") ? <>Your free Locker is full. <Link className="link" href="/upgrade">Get a pass</Link> for unlimited storage.</> : error.message);
     }
-    onAdded(data as LockerItem);
+    if (editing && upload && item!.file_path !== upload.file_path) await sb.storage.from("locker").remove([item!.file_path]);
+    onSaved(data as LockerItem);
   }
 
   return (
-    <form className="panel form" onSubmit={save} style={{ marginBottom: 18, maxWidth: 720 }}>
-      <h2 style={{ fontSize: 18 }}>Add a document</h2>
+    <form className="panel form" onSubmit={save} style={{ marginBottom: editing ? 0 : 18, maxWidth: 720, borderColor: editing ? "var(--accent)" : undefined }}>
+      <h2 style={{ fontSize: 18 }}>{editing ? "Edit document" : "Add a document"}</h2>
       <div className="field">
-        <label className={`drop ${file ? "has" : ""}`} htmlFor="lfile">{file ? `${file.name} · ${(file.size / 1048576).toFixed(1)} MB` : "Choose a file or photo (PDF, JPG, PNG, Word · up to 20 MB)"}</label>
-        <input id="lfile" type="file" accept="application/pdf,image/*,.docx" hidden onChange={(e) => setFile(e.target.files?.[0] || null)} />
-      </div>
-      {file && (file.type.startsWith("image/") || file.type === "application/pdf") && (
-        <div className="meta"><button type="button" className="btn sm" onClick={readWithAi} disabled={!!busy}>{busy === "ai" ? <><span className="spin" /> Reading…</> : "Fill in with AI"}</button><span className="hint">Reads the amount, date and session from a receipt or form. Uses 1 AI action.</span></div>
-      )}
-      <div className="row2">
-        <div className="field"><label className="lbl" htmlFor="lt">Title</label><input id="lt" maxLength={160} value={f.title} onChange={set("title")} placeholder="School fees receipt" /></div>
-        <div className="field"><label className="lbl" htmlFor="lc">Type</label><select id="lc" value={f.category} onChange={set("category")}>{Object.entries(CATS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
+        <label className={`drop ${file ? "has" : ""}`} htmlFor={editing ? `lfile-${item!.id}` : "lfile"}>
+          {file ? `${file.name} · ${(file.size / 1048576).toFixed(1)} MB` : editing ? "Keep the current file, or tap to replace it" : "Choose a file or photo (PDF, JPG, PNG, Word · up to 20 MB)"}
+        </label>
+        <input id={editing ? `lfile-${item!.id}` : "lfile"} type="file" accept="application/pdf,image/*,.docx" hidden onChange={(e) => setFile(e.target.files?.[0] || null)} />
       </div>
       <div className="row2">
-        <div className="field"><label className="lbl" htmlFor="ly">Session</label><select id="ly" value={f.academic_year} onChange={set("academic_year")}>{[...new Set([f.academic_year, ...sessions()])].map((s) => <option key={s}>{s}</option>)}</select></div>
-        <div className="field"><label className="lbl" htmlFor="ls">Semester</label><select id="ls" value={f.semester} onChange={set("semester")}>{[...new Set([f.semester, ...SEMS])].map((s) => <option key={s} value={s}>{s || "Not semester-specific"}</option>)}</select></div>
+        <div className="field"><label className="lbl" htmlFor={pid + "lt"}>Title</label><input id={pid + "lt"} maxLength={160} value={f.title} onChange={set("title")} placeholder="School fees receipt" /></div>
+        <div className="field"><label className="lbl" htmlFor={pid + "lc"}>Type</label><select id={pid + "lc"} value={f.category} onChange={set("category")}>{Object.entries(CATS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></div>
       </div>
       <div className="row2">
-        <div className="field"><label className="lbl" htmlFor="la">Amount paid (₦){f.category !== "receipt" && " · optional"}</label><input id="la" inputMode="decimal" value={f.amount_ngn} onChange={set("amount_ngn")} placeholder="e.g. 45000" /></div>
-        <div className="field"><label className="lbl" htmlFor="ld">Date on document</label><input id="ld" type="date" value={f.doc_date} onChange={set("doc_date")} /></div>
+        <div className="field"><label className="lbl" htmlFor={pid + "ly"}>Session</label><select id={pid + "ly"} value={f.academic_year} onChange={set("academic_year")}>{[...new Set([f.academic_year, ...sessions()])].map((s) => <option key={s}>{s}</option>)}</select></div>
+        <div className="field"><label className="lbl" htmlFor={pid + "ls"}>Semester</label><select id={pid + "ls"} value={f.semester} onChange={set("semester")}>{[...new Set([f.semester, ...SEMS])].map((s) => <option key={s} value={s}>{s || "Not semester-specific"}</option>)}</select></div>
       </div>
-      <div className="field"><label className="lbl" htmlFor="ln">Notes</label><input id="ln" maxLength={500} value={f.notes} onChange={set("notes")} placeholder="Payment reference, RRR, or anything to remember" /></div>
+      <div className="row2">
+        <div className="field"><label className="lbl" htmlFor={pid + "la"}>Amount paid (₦){f.category !== "receipt" && " · optional"}</label><input id={pid + "la"} inputMode="decimal" value={f.amount_ngn} onChange={set("amount_ngn")} placeholder="e.g. 45000" /></div>
+        <div className="field"><label className="lbl" htmlFor={pid + "ld"}>Date on document</label><input id={pid + "ld"} type="date" value={f.doc_date} onChange={set("doc_date")} /></div>
+      </div>
+      <div className="row2">
+        <div className="field"><label className="lbl" htmlFor={pid + "ll"}>Level</label><input id={pid + "ll"} maxLength={30} value={f.level} onChange={set("level")} placeholder="200" /></div>
+        <div className="field"><label className="lbl" htmlFor={pid + "ln"}>Notes</label><input id={pid + "ln"} maxLength={500} value={f.notes} onChange={set("notes")} placeholder="Payment reference, RRR, or anything to remember" /></div>
+      </div>
       {err && <div className="note err">{err}</div>}
-      <div className="meta" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={onCancel}>Cancel</button><button className="btn pri" disabled={!!busy}>{busy === "save" ? <><span className="spin" /> Saving…</> : "Save to Locker"}</button></div>
+      <div className="meta" style={{ justifyContent: "flex-end" }}><button type="button" className="btn ghost" onClick={onCancel}>Cancel</button><button className="btn pri" disabled={busy}>{busy ? <><span className="spin" /> Saving…</> : editing ? "Save changes" : "Save to Locker"}</button></div>
     </form>
   );
 }

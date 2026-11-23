@@ -22,7 +22,7 @@ The product name lives in `lib/brand.ts`.
 | Passes (Week / Month / Semester) | `settings.plans`, `app/api/paystack/init` |
 | Levels, streaks, weekly ranks | `study_log` (XP written only by DB triggers), `my_level()`, `leaderboard()`, `app/(app)/ranks` |
 | Share links + referrals | `app/c/[id]` (public preview with WhatsApp card), `claim_referral()` |
-| Locker (documents by session/semester, AI receipt reading) | `locker_items` + private `locker` bucket, `app/(app)/locker` |
+| Locker (documents by session/semester; edit details or replace the file) | `locker_items` + private `locker` bucket, `app/(app)/locker` |
 
 The full schema, policies and functions are in `supabase/migrations/`.
 
@@ -34,7 +34,8 @@ The full schema, policies and functions are in `supabase/migrations/`.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | no | publishable key, already set |
 | `NEXT_PUBLIC_SITE_URL` | no | `https://readpadi.xyz`, already set (change when you add a custom domain) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | Supabase → Project Settings → API keys → `service_role` / secret key |
-| `AI_PROVIDER` | no | `anthropic` (default), `gemini`, `groq`, `openrouter`, or `openai` (any OpenAI-compatible endpoint) |
+| `AI_PROVIDER` | no | `auto` (recommended: Groq for text, Gemini for images and as fallback), `anthropic` (default), `gemini`, `groq`, `openrouter`, or `openai` |
+| `GROQ_MODEL`, `GEMINI_MODEL` | no | Override the models used in `auto` mode |
 | `ANTHROPIC_API_KEY` | if provider is anthropic | console.anthropic.com (prepaid API credits, separate from Claude plans) |
 | `GEMINI_API_KEY` | if provider is gemini | aistudio.google.com/apikey — has a free tier |
 | `GROQ_API_KEY` | if provider is groq | console.groq.com — free tier, text only on most models |

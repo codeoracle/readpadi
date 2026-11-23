@@ -48,12 +48,12 @@ export default function UpgradeView({ settings, proUntil, reference }: { setting
           <div key={p.id} className="panel" style={i === 1 ? { borderColor: "var(--accent)" } : undefined}>
             <span className="lbl" style={i === 1 ? { color: "var(--accent)" } : undefined}>{p.label}{i === 1 ? " · most popular" : ""}</span>
             <h2 style={{ fontSize: 26 }}>{naira(p.price_ngn)} <span className="hint" style={{ fontSize: 14 }}>/ {p.days} days</span></h2>
-            <ul><li>Unlimited AI professor and exams</li><li>Unlimited Locker + AI receipt filing</li><li>{naira(p.price_ngn / p.days)} a day</li></ul>
+            <ul><li>Unlimited AI professor and exams</li><li>Unlimited Locker storage</li><li>{naira(p.price_ngn / p.days)} a day</li></ul>
             <button className={`btn lg ${i === 1 ? "pri" : ""}`} onClick={() => pay(p.id)} disabled={!!busy}>{busy === p.id ? <><span className="spin" /> Opening Paystack…</> : `Pay ${naira(p.price_ngn)}`}</button>
           </div>
         ))}
       </div>
-      <p className="hint" style={{ marginTop: 16 }}>One AI action is one professor answer, one batch of up to 10 exam questions, one study guide, one receipt read, or marking one script. Pay with card, bank transfer or USSD through Paystack. Invite classmates from your profile to earn free days.</p>
+      <p className="hint" style={{ marginTop: 16 }}>One AI action is one professor answer, one batch of up to 10 exam questions, one study guide, or marking one script. Pay with card, bank transfer or USSD through Paystack. Invite classmates from your profile to earn free days.</p>
     </div>
   );
 }
