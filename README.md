@@ -34,7 +34,13 @@ The full schema, policies and functions are in `supabase/migrations/`.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | no | publishable key, already set |
 | `NEXT_PUBLIC_SITE_URL` | no | `https://readpadi.xyz`, already set (change when you add a custom domain) |
 | `SUPABASE_SERVICE_ROLE_KEY` | **yes** | Supabase → Project Settings → API keys → `service_role` / secret key |
-| `ANTHROPIC_API_KEY` | **yes** | console.anthropic.com |
+| `AI_PROVIDER` | no | `anthropic` (default), `gemini`, `groq`, `openrouter`, or `openai` (any OpenAI-compatible endpoint) |
+| `ANTHROPIC_API_KEY` | if provider is anthropic | console.anthropic.com (prepaid API credits, separate from Claude plans) |
+| `GEMINI_API_KEY` | if provider is gemini | aistudio.google.com/apikey — has a free tier |
+| `GROQ_API_KEY` | if provider is groq | console.groq.com — free tier, text only on most models |
+| `OPENROUTER_API_KEY` | if provider is openrouter | openrouter.ai/keys |
+| `AI_MODEL` | no | Model for non-Anthropic providers (defaults: gemini-flash-latest, llama-3.3-70b-versatile) |
+| `AI_BASE_URL`, `AI_API_KEY` | if provider is openai | Base URL and key of any OpenAI-compatible API |
 | `PAYSTACK_SECRET_KEY` | **yes** | Paystack → Settings → API Keys (use `sk_test_…` first, then `sk_live_…`) |
 | `CLAUDE_MODEL` | no | optional, defaults to `claude-sonnet-5-5`; `claude-haiku-5-5` is cheaper |
 
