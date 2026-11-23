@@ -51,7 +51,11 @@ export default async (req: Request) => {
   });
   if (!upstream.ok) {
     if (!c.pro) await rpc("refund_ai_credit").catch(() => {});
-    return new Response(await upstream.text(), { status: upstream.status, headers: { "content-type": "application/json" } });
+    const detail = await upstream.text();
+    // Visible in Netlify → Logs → Edge Functions. Students never see billing or key errors.
+    console.error(`[ai] Anthropic ${upstream.status}: ${detail.slice(0, 500)}`);
+    if (upstream.status === 429 || upstream.status === 529) return json({ error: "busy", message: "The professor is busy right now. Wait a minute and try again. Your credit was not used." }, 429);
+    return json({ error: "unavailable", message: "The professor is unavailable at the moment. Please try again later. Your credit was not used." }, 503);
   }
   return new Response(upstream.body, { headers: { "content-type": "text/event-stream", "cache-control": "no-cache", "x-accel-buffering": "no" } });
 };
